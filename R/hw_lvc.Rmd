@@ -78,17 +78,9 @@ glide_formants <- read_csv("HW_data_code/Data/glide_formants.csv")
 
 # Dependent variable - Proportion of aspiration:  
 
+## Exploration 
 
-
-```{r}
-hw_manual_annotation_cog%>%
-  summary()
-```
-
-
-
-
-We have a lot of tokens with no aspiration (coded as [w]), 
+Looking at all tokens, where an proportion of aspiration of 0 means that the token is unaspirated, we see that most aspirated tokens have a proportion of aspiration of more than 50 percent. 
 
 ```{r}
 hw_manual_annotation_cog%>%
@@ -116,11 +108,6 @@ hw_manual_annotation_cog%>%
 
 hw_manual_annotation_cog%>%
   filter(asp == 1)%>%
-  ggplot(aes(AspProp, fill = Neighborhood))+ 
-  geom_density(alpha = 0.3)
-
-hw_manual_annotation_cog%>%
-  filter(asp == 1)%>%
   ggplot(aes(AspProp, fill = presegv))+ 
   geom_density(alpha = 0.3)
 
@@ -129,29 +116,9 @@ hw_manual_annotation_cog%>%
   ggplot(aes(AspProp, fill = Register))+ 
   geom_density(alpha = 0.3)
 ```
-```{r}
-hw_manual_annotation_cog%>%
-  filter(asp == 1)%>%
-  ggplot(aes(cog, fill = SEC))+ 
-  geom_density(alpha = 0.3)
 
-hw_manual_annotation_cog%>%
-  filter(asp == 1)%>%
-  ggplot(aes(cog, fill = Neighborhood))+ 
-  geom_density(alpha = 0.3)
 
-hw_manual_annotation_cog%>%
-  filter(asp == 1)%>%
-  ggplot(aes(cog, fill = presegv))+ 
-  geom_density(alpha = 0.3)
-```
-```{r}
-hw_manual_annotation_cog%>%
-  filter(asp == 1)%>%
-  ggplot(aes(aspProp, cog))+ 
-  geom_point()
-```
-
+Here we can see the proportion of aspiration for different speakers (a value of 0 on the y axis means that the token is unaspirated):
 
 ```{r}
 hw_manual_annotation_cog%>%
@@ -163,43 +130,9 @@ hw_manual_annotation_cog%>%
   ylab("Proportion aspiration")+ 
   ggtitle("Proportion aspiration by YOB")
 
-
-```
-```{r}
-hw_manual_annotation_cog%>%
-  group_by(YOB, aspProp, SEC)%>%
-  summarise(n = n())%>%
-  ggplot(aes(YOB, aspProp, color = SEC, size = n))+ 
-  geom_point(alpha = 0.5)+
-  scale_color_colorblind()+ 
-  ylab("Proportion aspiration")+ 
-  ggtitle("Proportion aspiration by YOB")
-
 ```
 
-```{r}
-hw_manual_annotation_cog%>%
-  group_by(YOB, aspProp, SEC)%>%
-  summarise(n = n())%>%
-  ungroup()%>%
-  ggplot(aes(YOB, aspProp, color = SEC))+ 
-  geom_point(size = n)+ 
-  scale_color_colorblind()+ 
-  ylab("Proportion aspiration")+ 
-  ggtitle("Proportion aspiration by YOB")
-```
-```{r}
-hw_manual_annotation_cog%>%
-  ggplot(aes(YOB, aspProp, color = post_pausal))+ 
-  geom_point()+ 
-  scale_color_colorblind()+ 
-  ylab("Proportion aspiration")+ 
-  ggtitle("Proportion aspiration by YOB")
-
-```
-
-
-
+Here we can see the rate of aspiration for different speakers: 
 
 
 ```{r}
@@ -233,11 +166,6 @@ hw_manual_annotation_cog%>%
   ggtitle("Percent unaspirated by YOB")
  
 
-
-```  
-
-
-```{r}
 hw_manual_annotation_cog%>%
   
   group_by(Speaker)%>%
@@ -269,9 +197,7 @@ hw_manual_annotation_cog%>%
   xlab("Year of Birth")+ 
   ggtitle("Percent aspirated by YOB")
  
-
 ```  
-
 
 
 ## Zero-inflated beta regression (including the 0s)
@@ -282,7 +208,7 @@ We don't have any 1s (that would be 100% aspiration) but we do have many 0s. So 
 
 Deviance coding: 
 
-```{r}
+```{r, eval=FALSE}
 hw_manual_annotation_cog$SECs <- hw_manual_annotation_cog$SEC
 hw_manual_annotation_cog$post_pausals <- hw_manual_annotation_cog$post_pausal
 hw_manual_annotation_cog$Registers <- hw_manual_annotation_cog$Register
@@ -296,7 +222,9 @@ contrasts(hw_manual_annotation_cog$post_pausals) <- c(-0.5,0.5)
 
 ### Priors: 
 
-```{r}
+We need to set priors: 
+
+```{r,  eval=FALSE}
 get_prior(
     aspProp ~ 1 + SEC*YOB_z + post_pausal + Neighborhood + SPS_z + Register + 
             (1|Word) + (1|Speaker), # model: beta distribution mean
@@ -306,64 +234,9 @@ get_prior(
   data = hw_manual_annotation_cog)
 ```
 
-```{r}
-get_prior(
-    aspProp ~ 1 + SECs*YOB_z + post_pausals  + SPS_z + Registers + 
-            (1|Word) + (1|Speaker), # model: beta distribution mean
-    zi ~ 1 + SEC + post_pausals +  YOB_z  + SPS_z + Registers + 
-            (1|Word) + (1|Speaker), # this is the zero-inflation part
-  family = zero_inflated_beta, 
-  data = hw_manual_annotation_cog)
-```
+Setting the priors: 
 
-
-```{r}
-# specify priors in log 
-priors_aspprop <- c(
-  prior(normal(0.5, 2), class = Intercept), # we could move the centre of the intercept since we don't expect it to the centered at 0
-
-  prior(normal(0, 2), class = b, coef = Registerreading),
-  prior(normal(0, 2), class = b, coef = YOB_z),
-  prior(normal(0, 2), class = b, coef = SECMC),
-  #prior(normal(0, 2), class = b, coef = NeighborhoodMorningside),
-  prior(normal(0, 2), class = b, coef = post_pausal1),
-
-  # specify weakly informative prior for the random effects (slopes)
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Speaker),
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Word)#,
-  
-  # specify weakly informative prior for the correlation between random intercept and slope
-#  prior(lkj(2), class = cor, group = Speaker),
-#  prior(cauchy(0, 0.1), class = sd)
-)
-
-```
-
-
-```{r}
-# specify priors in log 
-priors_aspprop_inter <- c(
-  prior(normal(0.5, 2), class = Intercept), # we could move the centre of the intercept since we don't expect it to the centered at 0
-
-  prior(normal(0, 2), class = b, coef = Registerreading),
-  prior(normal(0, 2), class = b, coef = YOB_z),
-  prior(normal(0, 2), class = b, coef = SECMC),
-  prior(normal(0, 2), class = b, coef = SECMC:YOB_z),
-  prior(normal(0, 2), class = b, coef = post_pausal1),
-
-  # specify weakly informative prior for the random effects (slopes)
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Speaker),
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Word)#,
-  
-  # specify weakly informative prior for the correlation between random intercept and slope
-#  prior(lkj(2), class = cor, group = Speaker),
-#  prior(cauchy(0, 0.1), class = sd)
-)
-
-```
-
-
-```{r}
+```{r, eval=FALSE}
 # specify priors in log 
 priors_aspprop_inter_s <- c(
   prior(normal(0.5, 2), class = Intercept), # we could move the centre of the intercept since we don't expect it to the centered at 0
@@ -376,11 +249,7 @@ priors_aspprop_inter_s <- c(
 
   # specify weakly informative prior for the random effects (slopes)
   prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Speaker),
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Word)#,
-  
-  # specify weakly informative prior for the correlation between random intercept and slope
-#  prior(lkj(2), class = cor, group = Speaker),
-#  prior(cauchy(0, 0.1), class = sd)
+  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Word)
 )
 
 ```
@@ -404,11 +273,11 @@ asp.inter_s <- brm(bf(
   warmup = 5000)
 ```
 
+Load the model: 
+
 ```{r}
 load("asp.inter_s.rda")
 ```
-
-
 
 This check compares the observed data (y) to the posterior samples. The curves should overlap. 
 
@@ -466,8 +335,7 @@ asp.fixed %>%
   annotate("rect", xmin = 0.5, ymin = 2.5, xmax = 1, ymax = 5, alpha = 0.5, fill = "#5e3c99") +
   geom_label(data = labels, aes(x, y, label = labs), colour = "white", fill = "black") +
   geom_label_repel(fill = NA) +
-  geom_point() #+
- # xlim(0, 1) + ylim(0, 5)
+  geom_point() 
 ```
 
 
@@ -476,34 +344,33 @@ asp.fixed %>%
 
 #### Summary: 
 
-These are the actual model results (estimates are in log-odds). The estimates are the median estimates. The "credible intervals" are highest density intervals (HDI) (smallest interval to cover 89% of posterior samples). The posterior direction (pd) indicates the probability that direction of the effect follows the sign of the median estimate - it's the percentage of all samples with that same sign (e.g. the probability that effect of a post_pausal context is negative is 82% (conditional comp)/100% in the zero-inflated comp). The region of practical equivalence (ROPE) tells us what percentage of the posterior sample falls within an interval we have defined as "practically zero" - it can be interpreted as the probability that there is "no practical effect" (this is different from Null Hypothesis Testing - we could apply that here too by checking whether the HDI contains 0). Rhat is a convergence diagnostic - if Rhat > 1.01 the model likely didn't converge properly. The effective sample size tells us how many independent posterior samples exist for this particular variable. 
+```{r}
+asp.inter_s$family
+```
+
+These are the actual model results (estimates are in log-odds). The estimates are the median estimates. The "credible intervals" are highest density intervals (HDI) (smallest interval to cover 89% of posterior samples). The posterior direction (pd) indicates the probability that direction of the effect follows the sign of the median estimate - it's the percentage of all samples with that same sign. he region of practical equivalence (ROPE) tells us what percentage of the posterior sample falls within an interval we have defined as "practically zero" - it can be interpreted as the probability that there is "no practical effect" (this is different from Null Hypothesis Testing - we could apply that here too by checking whether the HDI contains 0). Rhat is a convergence diagnostic - if Rhat > 1.01 the model likely didn't converge properly. The effective sample size tells us how many independent posterior samples exist for this particular variable. 
 
 Because the model has 2 components there are also 2 tables. The "conditional" results tell us that: 
 
-Middle class speakers tend to produce longer periods of aspiration - this effect is almost certainly positive. However, 21.58% of the HDI falls within ROPE - for logistic models ROPE is conventionally +/- 0.18. In NHST we'd dismiss that as "non-significant" - here we could say that there's a 78% chance that there is a meaningful effect of social class. 
+Middle class speakers tend to produce longer periods of aspiration - this effect is almost certainly positive. However, 19.91% of the HDI falls within ROPE - for logistic models ROPE is conventionally +/- 0.18. In NHST we'd dismiss that as "non-significant" - here we could say that there's a 80% chance that there is a meaningful effect of social class. 
 
-Whether or not a token follows a pause is very unlikely to make a meaningful difference (99.98% in ROPE). 
+Whether or not a token follows a pause is very unlikely to make a meaningful difference (99.05% in ROPE). 
 
 Similarly speech rate and register are very unlikely to have an effect. Neither is Year of Birth (note that that's scaled and centered, so a "step" in YOB isn't a year but one standard deviation - i.e. 16.97 years). 
 
 The zero-inflated component is a binary logistic regression telling us the probability of getting an unaspirated token (i.e. a 0): 
 
-Note that the intercept is very large and spans quite a wide range (1.05, 3.33, corresponding to 0.75 to 0.97) - but this makes sense given the reference levels we picked (working class speakers at mean age, mean rate of speech, in conversational style, not following a pause). 
-
-Higher social class has a negative effect (95% probability) and is very likely to be a significant effect (only 3% in ROPE). So middle class speakers are less likely to produce unaspirated tokens. Note that the distribution here is very wide - that's probably because there is a lot of individual variation (?). 
+Higher social class has a negative effect (95% probability) and is very likely to be a significant effect (only 3% in ROPE). So middle class speakers are less likely to produce unaspirated tokens. Note that the distribution here is very wide - that's probably because there is a lot of individual variation. 
 
 Unaspirated tokens are much less likely after pauses (100% pd, 0% in ROPE). 
 
-They also appear less likely among younger speakers - but this effect is less strongly negative and it's less probable (25% in ROPE). In any case if this was a straightforward change in progress we'd probably expect this to be a positive effect (younger speakers produce more unaspirated tokens). Perhaps there's an interaction of class and YOB? 
+They also appear less likely among younger speakers - but this effect is less strongly negative and it's less probable (24% in ROPE). In any case if this was a straightforward change in progress we'd probably expect this to be a positive effect (younger speakers produce more unaspirated tokens). 
 
-Speech rate is very unlikely to have an effect (that is really interesting actually). 
+Speech rate is very unlikely to have an effect - that's interesting/surprising because it suggests that this is not just a reduction effect. 
 
 Register seems to confirm the style hypothesis - unaspirated tokens are less likely in a reading style (only 1.35% in ROPE). 
 
 
-```{r}
-asp.inter_s$family
-```
 
 ```{r}
 asp.inter_s%>%
@@ -522,14 +389,6 @@ plot(show_intercept = T)
 
 
 Zero-inflated component, fixed effects: 
-
-```{r}
-pd_zib%>%
-  mutate(Parameter = case_when(str_detect(Parameter, "SPS_z") ~ str_replace(Parameter, "SPS_z", "Speech Rate"), 
-                               TRUE ~ Parameter))#%>%
-  #plot(show_intercept = T)
-```
-
 
 ```{r}
 p_direction(asp.inter_s,  effects = "fixed", component = "zi")%>%
@@ -559,9 +418,6 @@ p_direction(asp.inter_s,  effects = "fixed", component = "conditional")
 
 p_direction(asp.inter_s,  effects = "fixed", component = "conditional")%>%
 plot(show_intercept = T) 
-
-ggsave(paste0(pub_graphs, 'pdirection_zib_beta.eps'), height = 5, width = 6)
-
 ```
 Beta-regression: random intercepts word
 
@@ -588,6 +444,8 @@ hdi_zib <- plot(rope(asp.inter_s, component = "zi", ci = 0.89, ci_method = "HDI"
 hdi_beta <- plot(rope(asp.inter_s, component = "conditional", ci = 0.89, ci_method = "HDI"),  show_intercept = T)
 
 rope(asp.inter_s, component = "all", ci = 0.89, ci_method = "HDI")
+hdi_zib
+hdi_beta
 ```
 
 
@@ -608,10 +466,14 @@ This is driven by one speaker in particular:
 ```{r}
 hw_manual_annotation_cog%>%
   filter(Neighborhood == "Morningside")%>%
-  ggplot(aes(Speaker, cog))+ 
+  ggplot(aes(Pseudonym, cog))+ 
   geom_boxplot()
 ```
 
+
+Some more tidying: 
+
+We only want to look at aspirated tokens: 
 
 ```{r}
 wh_women_tidy_asp_all <- hw_manual_annotation_cog%>%
@@ -619,12 +481,6 @@ wh_women_tidy_asp_all <- hw_manual_annotation_cog%>%
   mutate(SPS_z = scale(SyllablesPerSecond))
   
 ```
-
-
-
-
-
-Some more tidying: 
 
 There are too many categories in preseg-manner: 
 
@@ -691,11 +547,10 @@ wh_women_tidy_asp_all%>%
 
 ### Contrasts: 
 
-
 Deviance coding: 
 
 
-```{r}
+```{r, eval=FALSE}
 wh_women_tidy_asp_all$SECs <- wh_women_tidy_asp_all$SEC
 wh_women_tidy_asp_all$Registers <- wh_women_tidy_asp_all$Register
 
@@ -708,14 +563,14 @@ contrasts(wh_women_tidy_asp_all$Registers)
 
 The "preceding segment" factor has 6 levels: 
 
-```{r}
+```{r, eval=FALSE}
 contrasts(wh_women_tidy_asp_all$presegm)
 ```
 
 
-``For deviation coding, the values must also sum to 0. Deviation coding is recommended whenever you are trying to draw ANOVA-style inferences. Under this scheme, the target level gets the value k−1/k while any non-target level gets the value −1/k.'' We'll take the "pause" level as baseline. 
+Recall that values must sum to 0. The target level gets the value k−1/k while any non-target level gets the value −1/k.'' We'll take the "pause" level as baseline. 
 
-```{r}
+```{r, eval=FALSE}
 wh_women_tidy_asp_all <- wh_women_tidy_asp_all%>%
   mutate(PSFv1 = if_else(presegm== "fricative", 4/5, -1/5), # target fricative
          PSAv1 = if_else(presegm == "approximant", 4/5, -1/5), 
@@ -729,7 +584,7 @@ wh_women_tidy_asp_all <- wh_women_tidy_asp_all%>%
 
 We can set a lot of priors: 
 
-```{r}
+```{r, eval=FALSE}
 get_prior( cog ~  Register + presegm + SEC + YOB_z + SPS_z + 
     # add random intercepts
     (1 | Speaker) + 
@@ -739,50 +594,11 @@ get_prior( cog ~  Register + presegm + SEC + YOB_z + SPS_z +
    data = wh_women_tidy_asp_2019)
 ```
 
-These need to be specified in log-space since we assume that CoG is lognormally distributed. Here is some useful information: https://vasishth.github.io/bayescogsci/book/sec-ppd.html#sec:lnfirst 
-
-``The grand median will just be exp(μ). We could assume that the grand median, exp(μ), represents the underlying time it takes to press the space bar if there would be no noise, that is, if σ would be 0. This also means that the prior of μ is not in milliseconds, but in log(milliseconds).'' 
-
-So exp(mu) (defined by the intercept prior - the distribution of possible means) is, in our case, the baseline CoG if sigma is 0. 
+These need to be specified in log-space since we assume that CoG is lognormally distributed.
 
 Most of these priors are not very informative - except the intercept which would overfit if we just went with something centered on 0. 
 
-
-```{r}
-# specify priors in log space 
-priors_complex_all <- c(
-  prior(normal(7, 1), class = Intercept), # we don't actually ever expect CoG < 400
-  
-  prior(normal(0, 0.5), class = b, coef = Registerreading),
-  prior(normal(0, 0.5), class = b, coef = YOB_z),
-  prior(normal(0, 1), class = b, coef = SECMC),
-#  prior(normal(0, 0.5), class = b, coef = NeighborhoodMorningside),
-
-
-  prior(normal(0, 0.5), class = b, coef = SPS_z),
-  prior(normal(0, 0.5), class = b, coef = presegmfricative),
-  prior(normal(0, 0.5), class = b, coef = presegmplosive),
-  prior(normal(0, 0.5), class = b, coef = presegmnasal),
-  prior(normal(0, 0.5), class = b, coef = presegmapproximant),
-  prior(normal(0, 0.5), class = b, coef = presegmvowel),
-
-  # specify weakly informative prior for the random effects (slopes)
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Speaker),
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Word),
-  prior(cauchy(0, 0.1), class = sd, coef = Registerreading, group = Speaker),
-  prior(cauchy(0, 0.1), class = sd, coef = Registerconversation, group = Speaker),
-  
-  # specify weakly informative prior for the correlation between random intercept and slope
- prior(lkj(2), class = cor, group = Speaker),
- 
- prior(cauchy(0, 0.1), class = sigma)
-)
-```
-
-
-With the deviance coding: 
-
-```{r}
+```{r, eval=FALSE}
 get_prior(cog ~  Registers + SECs + YOB_z + SPS_z + PSFv1 + PSAv1 + PSVv1 + PSPv1 + PSNv1 + 
     # add random intercepts
     (1 | Speaker) + 
@@ -793,7 +609,7 @@ get_prior(cog ~  Registers + SECs + YOB_z + SPS_z + PSFv1 + PSAv1 + PSVv1 + PSPv
 ```
 
 
-```{r}
+```{r, eval=FALSE}
 # specify priors in log space 
 priors_complex_all_s <- c(
   prior(normal(7, 1), class = Intercept), # we don't actually ever expect CoG < 400
@@ -967,11 +783,6 @@ The age and class effects are interesting: class doesn't pattern with reading st
 
 We need to manually set a ROPE value. Usually this is something like +/- 0.1SD of the outcome variable (here ~76Hz). While a difference of 75Hz is not exactly 0 it's also not a big difference. Because of the deviance coding: a) the intercept represents the weighted grand mean (assuming a post-pausal token still) across all groups (exp(6.89) = 982Hz), and b) the coefficients represent the difference between this grand mean (the zero level of deviance coded variables is the average) and the level of interest. ROPE represents the region we deem as "not practically significant" - we can set this range as a difference between grand mean (zero level, average) and intercept+coefficient. Somewhat arbitrarily we could say that a "practically significant difference" is one that is larger than 100Hz, which works to a range of +/-0.1 (given our intercept of 6.89). 
 
-```{r}
-log(982.4+100)
-log(982.4-100)
-exp(6.89-0.1)
-```
 Following this ROPE we can see that the preceding manner (except plosives) have a strong effect (all in expected direction). The register effect is definitely negative but it's also definitely debateable how important it is. 
 
 ```{r}
@@ -994,8 +805,6 @@ Looking just add probability of direction
 p_direction(cog.4_s,  effects = "fixed")%>%
   plot(show_intercept = T)
 
-ggsave(paste0(pub_graphs, 'pd_cog.eps'), height = 5, width = 6)
-
 ```
 Random effects: 
 
@@ -1011,7 +820,6 @@ p_direction(cog.4_s,  effects = "random", parameters = "Speaker")%>%
 
 ```{r}
 plot(rope(cog.4_s, range=c(0.1, -0.1),ci = 0.89, ci_method = "HDI"))
-  ggsave(paste0(pub_graphs, 'hdi_cog.png'), height = 5, width = 6)
 
 ```
 
@@ -1030,8 +838,6 @@ w_formants_mid_women <- glide_formants%>%
   mutate_if(is.character, as.factor)%>%
   as.data.frame()
 
-w_formants_mid_women%>%
-  summary()
 ```
 Note that we're only looking at a subset of the 1400 tokens we started out with - this is because some tokens are voiceless throughout, some measurements were outwith the 45-55% range, and many tokens didn't have good formant tracking. We still get each type from each speaker. 
 
@@ -1080,7 +886,7 @@ w_formants_mid_women$F1.Bark%>%
 
 Deviance coding: 
 
-```{r}
+```{r, eval=FALSE}
 w_formants_mid_women$SECs <- w_formants_mid_women$SEC
 w_formants_mid_women$code2s <- w_formants_mid_women$code2
 
@@ -1092,7 +898,7 @@ contrasts(w_formants_mid_women$SECs)
 
 As reference we can use mid central vowel (following context) and invariant (code2).
 
-```{r}
+```{r, eval=FALSE}
 w_formants_mid_women <- w_formants_mid_women%>%
   mutate(PSH= if_else(post_segh== "high_vowel", 2/3, -1/3), # target high vowel
          PSL = if_else(post_segh == "low_vowel", 2/3, -1/3),
@@ -1102,28 +908,6 @@ w_formants_mid_women <- w_formants_mid_women%>%
          w = if_else(code2 == "w", 2/3, -1/3))%>%
   mutate_at(c(59:64), as.factor)
 ```
-```{r}
-w_formants_mid_women%>%
-  select(code2, hw, w)
-```
-
-A second approach - what if we only look at the variant tokens?
-
-```{r}
-w_formants_mid_women_var <- w_formants_mid_women%>%
-  subset(code2 != "iw")%>%
-  mutate(codes = code2)
-```
-```{r}
-w_formants_mid_women_var$codes <- factor(w_formants_mid_women_var$codes, levels = c("w", "hw"))
-contrasts(w_formants_mid_women_var$codes) <- c(-0.5, 0.5)
-```
-
-```{r}
-contrasts(w_formants_mid_women_var$SECs)
-contrasts(w_formants_mid_women_var$codes)
-```
-
 
 
 
@@ -1131,13 +915,13 @@ contrasts(w_formants_mid_women_var$codes)
 
 
 
-```{r}
+```{r, eval=FALSE}
 get_prior(F1.Bark ~ w + hw + PSL + PSH + PSL:w + PSH:w + PSL:hw + PSH:hw + SECs + YOB_z + log_dur + F2.Bark +
             (1|word) + (1 + hw + w|Speaker) , data = w_formants_mid_women)
 ```
 
 
-```{r}
+```{r, eval=FALSE}
 # specify priors in log space
 priors_f1_s <- c(
   prior(normal(1, 0.5), class = Intercept), 
@@ -1172,44 +956,7 @@ priors_f1_s <- c(
 ```
 
 
-Variable tokens only: 
 
-```{r}
-get_prior(F1.Bark ~ codes + PSL + PSH + PSL:codes + PSH:codes + SECs + YOB_z + log_dur + F2.Bark +
-            (1|word) + (1 + codes|Speaker) , data = w_formants_mid_women_var)
-```
-
-
-```{r}
-# specify priors in log space
-priors_f1_sv <- c(
-  prior(normal(1, 0.5), class = Intercept), 
-
-  prior(normal(0, 0.1), class = b, coef = SECs1),
-  prior(normal(0, 0.1), class = b, coef = YOB_z),
-  
-  prior(normal(0, 0.1), class = b, coef = F2.Bark),
-  prior(normal(0, 0.1), class = b, coef = log_dur),
-  prior(normal(0, 0.1), class = b, coef = PSL),
-  prior(normal(0, 0.1), class = b, coef = PSH),
-  prior(normal(0, 0.1), class = b, coef = codes1),
-  
-  #prior(normal(0, 0.2), class = b, coef = codes1:PSL),
-  #prior(normal(0, 0.2), class = b, coef = codes1:PSH),
-
-  # specify weakly informative prior for the random effects (slopes)
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Speaker),
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = word),
-  
-  prior(cauchy(0, 0.1), class = sd, coef = codes1, group = Speaker),
- # prior(cauchy(0, 0.1), class = sd, coef = codes2, group = Speaker),
-
-  # specify weakly informative prior for the correlation between random intercept and slope
- prior(lkj(2), class = cor, group = Speaker),
-
- prior(cauchy(0, 0.1), class = sigma)
-)
-```
 
 Let's check the predictions: 
 
@@ -1411,7 +1158,6 @@ p_direction(f1_s)%>%
 ```
 ```{r}
  plot(rope(f1_s, component = "conditional", ci = 0.89, ci_method = "HDI", range = c(-0.04,0.04)),  show_intercept = T)
-ggsave(paste0(pub_graphs, 'f1_hdi.png'), width = 6, height = 5)
 ```
 
 
@@ -1422,7 +1168,7 @@ ggsave(paste0(pub_graphs, 'f1_hdi.png'), width = 6, height = 5)
 
 Deviance coding: 
 
-```{r}
+```{r, eval=FALSE}
 w_formants_mid_women$SECs <- w_formants_mid_women$SEC
 w_formants_mid_women$code2s <- w_formants_mid_women$code2
 
@@ -1433,7 +1179,7 @@ contrasts(w_formants_mid_women$SECs) <- c(-0.5,0.5)
 
 As reference we can use mid central vowel (following context) and invariant (code2).
 
-```{r}
+```{r, eval=FALSE}
 w_formants_mid_women <- w_formants_mid_women%>%
   mutate(PSH = if_else(post_segh== "high_vowel", 2/3, -1/3), # target high vowel
          PSL = if_else(post_segh == "low_vowel", 2/3, -1/3),
@@ -1451,13 +1197,13 @@ w_formants_mid_women <- w_formants_mid_women%>%
 
 With deviance coding
 
-```{r}
+```{r, eval=FALSE}
 get_prior(F2.Bark ~ w + hw + PSB + PSF + PSB:w + PSF:w + PSB:hw + PSF:hw + SECs + YOB_z + log_dur + F1.Bark +
             (1|word) + (1 + hw + w|Speaker) , data = w_formants_mid_women)
 ```
 
 
-```{r}
+```{r,eval=FALSE}
 # specify priors in log space
 priors_f2_s <- c(
   prior(normal(1, 0.5), class = Intercept), 
@@ -1491,36 +1237,7 @@ priors_f2_s <- c(
 )
 ```
 
-```{r}
-# specify priors in log space
-priors_f2_sv <- c(
-  prior(normal(1, 0.5), class = Intercept), 
 
-  prior(normal(0, 0.1), class = b, coef = SECs1),
-  prior(normal(0, 0.1), class = b, coef = YOB_z),
-  
-  prior(normal(0, 0.1), class = b, coef = F1.Bark),
-  prior(normal(0, 0.1), class = b, coef = log_dur),
-  prior(normal(0, 0.1), class = b, coef = PSF),
-  prior(normal(0, 0.1), class = b, coef = PSB),
-  prior(normal(0, 0.1), class = b, coef = codes1),
-  
-  prior(normal(0, 0.2), class = b, coef = codes1:PSF),
-  prior(normal(0, 0.2), class = b, coef = codes1:PSB),
-
-  # specify weakly informative prior for the random effects (slopes)
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = Speaker),
-  prior(cauchy(0, 0.1), class = sd, coef = Intercept, group = word),
-  
-  prior(cauchy(0, 0.1), class = sd, coef = codes1, group = Speaker),
- # prior(cauchy(0, 0.1), class = sd, coef = codes2, group = Speaker),
-
-  # specify weakly informative prior for the correlation between random intercept and slope
- prior(lkj(2), class = cor, group = Speaker),
-
- prior(cauchy(0, 0.1), class = sigma)
-)
-```
 ### Run model
 
 
@@ -1535,26 +1252,11 @@ f2.1_s <- brm(F2.Bark ~ w + hw + PSB + PSF + PSB:w + PSF:w + PSB:hw + PSF:hw + S
             cores = 4)
 ```
 
-```{r, eval = FALSE}
 
-f2.s_v <- brm(F2.Bark ~ codes + PSB + PSF + PSF:codes + PSB:codes + SECs + YOB_z + log_dur + F1.Bark +
-            (1|word) + (1 + codes|Speaker) , data = w_formants_mid_women_var, 
-            family = lognormal(), 
-            prior = priors_f2_sv, 
-            warmup = 5000, 
-            iter = 15000, 
-            chains = 4, 
-            cores = 4)
-
-```
 
 
 ```{r}
 load("f2.1_s.rda")
-```
-
-```{r}
-load("f2_sv.rda")
 ```
 
 
@@ -1563,12 +1265,6 @@ load("f2_sv.rda")
 
 ```{r}
 pp_check(f2.1_s, nsamples = 200)
-```
-
-This one looks bad - but it speaks to the fact that the two glides are different. 
-
-```{r}
-pp_check(f2.s_v, nsamples = 200)
 ```
 
 
@@ -1592,32 +1288,6 @@ summary(f2.1_s, ci = 0.89)$fixed[, 5:7]
 
 #### Summary: 
 
-Intercept median is 6.89
-
-```{r}
-exp(1.93)
-```
-
-
-```{r}
-log(6.89+0.16)
-log(6.89)
-```
-
-+/- 0.02
-
-
-Expectations: F2 higher for aspirated tokens
-
-The interactions cause a multicollinarity warning . 
-
-Dummy coded model: reference hw before back vowel 
-
-context: F2 is higher for front and central vowels (expected), but there's an interaction: hw tokens are more peripheral 
-
-Deviance coded model: 
-
-
 ```{r}
 f2.1_s%>%
   model_parameters(rope_range = c(-0.02,0.02))
@@ -1634,7 +1304,7 @@ p_direction(f2.1_s)%>%
 ```
 ```{r}
  plot(rope(f2.1_s, component = "conditional", ci = 0.89, ci_method = "HDI", range = c(-0.04,0.04)),  show_intercept = T)
-ggsave(paste0(pub_graphs, 'f2_hdi.png'), width = 6, height = 5)
+
 ```
 
 
