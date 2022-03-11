@@ -6,11 +6,11 @@
 
 
 form Time averaging for fricatives (be polite - please cite!)
-   sentence audiodir: C:\Users\ninal\Documents\Alignments\full_corpus\
-   sentence textdir: C:\Users\ninal\UOE_OneDrive\University\Postgrad\Research\Research_Projects\Aligners\Data2020\Data\handcoded\wh_textgrids\
+   sentence audiodir: 
+   sentence textdir: 
    sentence Interval_label asp
    sentence Log_file logfile_fricatives_15ms_6_300Hz_2
-   sentence files_to_process: "C:\Users\ninal\UOE_OneDrive\University\Postgrad\Research\Research_Projects\Aligners\Data2020\Data\handcoded\wh_textgrids\filenames.txt"
+   sentence files_to_process: 
    positive Labeled_tier_number 3
    positive word_Tier 1
    positive phone_Tier 2
