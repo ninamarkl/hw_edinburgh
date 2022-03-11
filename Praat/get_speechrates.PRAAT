@@ -1,6 +1,6 @@
 form Search Settings
 	comment File Settings
-	word textdir "C:\Users\ninal\UOE_OneDrive\University\Postgrad\Research\Research_Projects\Aligners\Data2020\Data\handcoded\wh_textgrids\"
+	word textdir 
 endform
 
 Read Strings from raw text file: 'textdir$' + "filenames.txt"
