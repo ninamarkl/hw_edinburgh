@@ -1,7 +1,7 @@
 form filename
 	word filename
 	positive tiers
-	word analysisdir C:\Users\ninal\UOE_OneDrive\University\Postgrad\Research\Research_Projects\Aligners\Data2020\Data\phonetic_analysis\pub_graphs\
+	word analysisdir 
 endform
 
 select TextGrid 'filename$'_wh
