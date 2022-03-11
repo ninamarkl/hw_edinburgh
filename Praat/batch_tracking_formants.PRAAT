@@ -12,15 +12,15 @@
 form Search Settings
 	comment File Settings
 	comment Specify directory containing audio files (with quotes)
-	word audiodir "C:\Users\ninal\UoE_OneDrive\University\Postgrad\Research\Research_Projects\ASR_Bias\VCTK-Corpus\VCTK-Corpus\UK_Ireland\stella\wav\"
+	word audiodir 
 	comment Specify directory containing TextGrid files (with quotes)
-	word textdir "C:\Users\ninal\UoE_OneDrive\University\Postgrad\Research\Research_Projects\ASR_Bias\VCTK-Corpus\VCTK-Corpus\UK_Ireland\stella\aligned\"
+	word textdir 
 	comment Specify desired output directory (without quotes)
-	word outdir C:\Users\ninal\UoE_OneDrive\University\Postgrad\Research\Research_Projects\ASR_Bias\VCTK-Corpus\VCTK-Corpus\UK_Ireland\stella
+	word outdir 
 	comment Path to file listing all file names to be processed
-	word files_to_process "C:\Users\ninal\UoE_OneDrive\University\Postgrad\Research\Research_Projects\ASR_Bias\filenames.txt"
+	word files_to_process 
 	comment Segments to Search For (in regular expression format)
-	sentence search_Segments (\*|-|~)*(A+|E+|I+|U+|O+)(r)*
+	sentence search_Segments 
 	comment Tier to search in
 	positive search_Tier 2
 	comment Extra Settings
